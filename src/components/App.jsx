@@ -24,6 +24,18 @@ export default class App extends PureComponent {
     this.setState({ query, page: 1 }, this.fetchImages);
   };
 
+  componentDidUpdate(prevProps, prevState) {
+    const { query, page } = this.state;
+
+    if (prevState.query !== query || prevState.page !== page) {
+      this.fetchImages();
+    }
+  }
+
+  handleClick = () => {
+    this.setState(prevState => ({ page: prevState.page + 1 }));
+  };
+
   fetchImages = async () => {
     this.setState({ loading: true });
 
@@ -33,7 +45,6 @@ export default class App extends PureComponent {
       this.setState((prevState) => ({
         images: page === 1 ? images : [...prevState.images, ...images],
         loading: false,
-        page: prevState.page + 1,
       }));
     } catch (error) {
       this.setState({ error, loading: false });
@@ -44,18 +55,6 @@ export default class App extends PureComponent {
     this.setState((prevState) => ({ showModal: !prevState.showModal }));
   };
 
-  handleClick = () => {
-    this.setState({ loading: true });
-    
-    fetch(`https://pixabay.com/api/?q=${this.state.query}&page=${this.state.page}&key=40087799-873756a7f0c0976e3054c80be&image_type=photo&orientation=horizontal&per_page=12`)
-      .then(response => {
-        if (response.ok) {
-          return response.json()
-        }
-      }).then(images => this.setState(prevState => ({ images: [...prevState.images, ...images.hits] })))
-      .catch(error => this.setState({ error }))
-      .finally(() => { this.setState({ loading: false }); this.setState(prevState => ({ page: prevState.page + 1 })) });
-  }
 
   getIndex = (index) => {
   this.setState({index})
