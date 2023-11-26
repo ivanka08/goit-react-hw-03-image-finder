@@ -6,6 +6,7 @@ import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import Modal from 'components/Modal/Modal';
 import css from './App.module.css';
 import Button from './Button/Button';
+import { fetchData } from './api';
 
 
 export default class App extends PureComponent {
@@ -20,31 +21,28 @@ export default class App extends PureComponent {
   };
 
   saveSearchQuerry = (query) => {
-    this.setState({ query });
-    this.setState({page: 1})
-  }
+    this.setState({ query, page: 1 }, this.fetchImages);
+  };
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevState.query;
-    const nextQuery = this.state.query;
-    
+  fetchImages = async () => {
+    this.setState({ loading: true });
 
-    if (prevQuery !== nextQuery) {
-      this.setState({loading: true });
-
-      fetch(`https://pixabay.com/api/?q=${nextQuery}&page=${this.state.page}&key=40087799-873756a7f0c0976e3054c80be&image_type=photo&orientation=horizontal&per_page=12`)
-        .then(response => {
-          if (response.ok) {
-            return response.json()
-          }
-        }).then(images => this.setState({ images: images.hits }))
-        .catch(error => this.setState({ error }))
-        .finally(() => { this.setState({ loading: false }); this.setState(prevState => ({ page: prevState.page + 1 })) });
-      
+    try {
+      const { query, page } = this.state;
+      const images = await fetchData(query, page);
+      this.setState((prevState) => ({
+        images: page === 1 ? images : [...prevState.images, ...images],
+        loading: false,
+        page: prevState.page + 1,
+      }));
+    } catch (error) {
+      this.setState({ error, loading: false });
     }
-  }
+  };
 
-  toggleModal = () => {this.setState(prevState => ({ showModal: !prevState.showModal }))}
+  toggleModal = () => {
+    this.setState((prevState) => ({ showModal: !prevState.showModal }));
+  };
 
   handleClick = () => {
     this.setState({ loading: true });
@@ -70,7 +68,6 @@ export default class App extends PureComponent {
     return <div className={css.App}>
       <SearchBar onSubmit={this.saveSearchQuerry}></SearchBar>
 
-      
         
       <ImageGallery>
         {images.map((image, index) => {
